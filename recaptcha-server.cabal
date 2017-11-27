@@ -6,9 +6,19 @@ build-type:    Simple
 executable          recaptcha-server
     hs-source-dirs:     src
     main-is:            Main.hs
+    other-modules:      DB
     ghc-options:        -Wall -threaded -O2 -rtsopts -with-rtsopts=-N
     default-language:   Haskell2010
     build-depends:      base
                       , scotty
                       , http-types
                       , aeson
+                      , persistent
+                      , persistent-template
+                      , persistent-sqlite
+                      , time
+                      , text
+                      , monad-logger
+                      , fast-logger
+                      , hslogger
+                      , bytestring
