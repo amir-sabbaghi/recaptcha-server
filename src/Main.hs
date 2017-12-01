@@ -10,6 +10,7 @@ import Data.Text
 import Data.Time.Clock (getCurrentTime)
 import Database.Persist.Sqlite
 import Network.HTTP.Types
+import Network.Wai (remoteHost)
 import System.Environment
 import Web.Scotty
 
@@ -29,7 +30,8 @@ main = do
       post "/" $ do
         input <- jsonData
         hdrs <- headers
+        remote <- fmap remoteHost request
         liftIO $ do time <- getCurrentTime
-                    let row = Row time "" hdrs (image input) (label input) (answer input)
+                    let row = Row time (show remote) hdrs (image input) (label input) (answer input)
                     run p $ insert row
         status ok200

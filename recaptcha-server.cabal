@@ -22,3 +22,4 @@ executable          recaptcha-server
                       , fast-logger
                       , hslogger
                       , bytestring
+                      , wai
