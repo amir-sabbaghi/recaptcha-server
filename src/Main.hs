@@ -3,6 +3,8 @@
 
 import GHC.Generics
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Chan
 import Control.Monad.IO.Class
 import DB
 import Data.Aeson
@@ -24,14 +26,24 @@ instance FromJSON Input
 main :: IO ()
 main = do
   [port, dbpath] <- getArgs
-  withSqlitePool (pack dbpath) 10 $ \p -> do
+  ch <- newChan
+  forkIO $ dbThread (pack dbpath) ch
+  scotty (read port) $ do
+    post "/" $ do
+      input <- jsonData
+      hdrs <- headers
+      remote <- fmap remoteHost request
+      liftIO $ do time <- getCurrentTime
+                  let row = Row time (show remote) hdrs (image input) (label input) (answer input)
+                  writeChan ch row
+      status ok200
+
+dbThread :: Text -> Chan Row -> IO ()
+dbThread path ch = do
+  withSqlitePool path 10 $ \p -> do
     run p $ runMigration migrateAll
-    scotty (read port) $ do
-      post "/" $ do
-        input <- jsonData
-        hdrs <- headers
-        remote <- fmap remoteHost request
-        liftIO $ do time <- getCurrentTime
-                    let row = Row time (show remote) hdrs (image input) (label input) (answer input)
-                    run p $ insert row
-        status ok200
+    let loop = do
+          r <- readChan ch
+          run p $ insert r
+          loop
+    loop
