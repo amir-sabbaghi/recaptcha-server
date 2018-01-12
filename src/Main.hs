@@ -8,11 +8,13 @@ import Control.Concurrent.Chan
 import Control.Monad.IO.Class
 import DB
 import Data.Aeson
+import Data.String
 import Data.Text
 import Data.Time.Clock (getCurrentTime)
 import Database.Persist.Sqlite
 import Network.HTTP.Types
 import Network.Wai (remoteHost)
+import Network.Wai.Handler.Warp (defaultSettings, setHost, setPort)
 import System.Environment
 import Web.Scotty
 
@@ -25,10 +27,15 @@ instance FromJSON Input
 
 main :: IO ()
 main = do
-  [port, dbpath] <- getArgs
+  [host, port, dbpath] <- getArgs
   ch <- newChan
   forkIO $ dbThread (pack dbpath) ch
-  scotty (read port) $ do
+  let opts = Options { verbose = 0
+                     , settings = setHost (fromString host) $
+                                  setPort (read port) $
+                                  defaultSettings
+                     }
+  scottyOpts opts $ do
     post "/" $ do
       input <- jsonData
       hdrs <- headers
