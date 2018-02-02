@@ -29,7 +29,7 @@ main :: IO ()
 main = do
   [host, port, dbpath] <- getArgs
   ch <- newChan
-  forkIO $ dbThread (pack dbpath) ch
+  _ <- forkIO $ dbThread (pack dbpath) ch
   let opts = Options { verbose = 0
                      , settings = setHost (fromString host) $
                                   setPort (read port) $
@@ -51,6 +51,6 @@ dbThread path ch = do
     run p $ runMigration migrateAll
     let loop = do
           r <- readChan ch
-          run p $ insert r
+          run p $ insert_ r
           loop
     loop
